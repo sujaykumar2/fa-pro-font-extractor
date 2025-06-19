@@ -2,8 +2,8 @@ name: Extract and Upload TTF
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 8 * * *"  # Every day at 8 AM UTC
+  repository_dispatch:
+    types: [trigger-from-make]
 
 jobs:
   extract_and_upload:
