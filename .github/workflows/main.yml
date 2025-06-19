@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Download Font Awesome Pro TGZ
         run: |
-          curl -L -H "Authorization: Bearer B2E2A31E-A366-4F01-81A7-6F20E687B9CE" \
+          curl -L -H "Authorization: Bearer ${{ secrets.FA_TOKEN }}" \
           https://npm.fontawesome.com/@fortawesome/fontawesome-pro/-/fontawesome-pro-6.7.2.tgz \
           -o fa-pro.tgz
 
