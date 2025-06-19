@@ -1,0 +1,40 @@
+name: Extract and Upload TTF
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 8 * * *"  # Every day at 8 AM UTC
+
+jobs:
+  extract_and_upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Font Awesome Pro TGZ
+        run: |
+          curl -L -H "Authorization: Bearer B2E2A31E-A366-4F01-81A7-6F20E687B9CE" \
+          https://npm.fontawesome.com/@fortawesome/fontawesome-pro/-/fontawesome-pro-6.7.2.tgz \
+          -o fa-pro.tgz
+
+      - name: Extract .tgz
+        run: |
+          mkdir extracted
+          tar -xzf fa-pro.tgz -C extracted
+
+      - name: Find .ttf file
+        run: |
+          find extracted -type f -name "*.ttf" -exec cp {} fa-solid-900.ttf \;
+
+      - name: Upload to GoDaddy FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          local-dir: ./
+          server-dir: /public_html/fa-ttf/
+          exclude: |
+            **/.git*
+            **/.github*
+            fa-pro.tgz
+            extracted/**
