@@ -9,7 +9,45 @@ permissions:
   contents: write
 
 jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      current: ${{ steps.versioncheck.outputs.current }}
+      latest: ${{ steps.latest.outputs.version }}
+      run_sync: ${{ steps.runcheck.outputs.run_sync }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Get Latest Font Awesome Version
+        id: latest
+        run: |
+          LATEST=$(curl -s https://api.github.com/repos/FortAwesome/Font-Awesome/releases/latest | jq -r .tag_name)
+          echo "version=$LATEST" >> "$GITHUB_OUTPUT"
+
+      - name: Check Existing Version
+        id: versioncheck
+        run: |
+          if [[ -f version.txt ]]; then
+            CURRENT=$(cat version.txt)
+          else
+            CURRENT=""
+          fi
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+
+      - name: Decide Whether to Sync
+        id: runcheck
+        run: |
+          if [ "${{ steps.versioncheck.outputs.current }}" != "${{ steps.latest.outputs.version }}" ]; then
+            echo "run_sync=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_sync=false" >> "$GITHUB_OUTPUT"
+          fi
+
   sync-font:
+    needs: check-version
+    if: needs.check-version.outputs.run_sync == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -21,40 +59,14 @@ jobs:
           sudo apt-get update
           pip install fonttools
 
-      - name: Get Latest Font Awesome Version
-        id: latest
-        run: |
-          LATEST=$(curl -s https://api.github.com/repos/FortAwesome/Font-Awesome/releases/latest | jq -r .tag_name)
-          echo "Latest version is $LATEST"
-          echo "version=$LATEST" >> "$GITHUB_OUTPUT"
-
-      - name: Check Existing Version
-        id: versioncheck
-        run: |
-          if [[ -f version.txt ]]; then
-            CURRENT=$(cat version.txt)
-            echo "⏳ Current version: $CURRENT"
-          else
-            CURRENT="none"
-            echo "🆕 No previous version found"
-          fi
-          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
-
-      - name: Compare Versions & Exit if Same
-        if: steps.versioncheck.outputs.current == steps.latest.outputs.version
-        run: |
-          echo "✅ Font is already up-to-date (version ${{ steps.latest.outputs.version }}). Exiting."
-          exit 0
-
       - name: Cleanup old files
         run: |
-          echo "🧹 Removing old files"
           rm -f glyphs.csv fa-pro.tgz fa-solid-900.ttf
           rm -rf extracted
 
       - name: Download FontAwesome Pro .tgz
         run: |
-          VERSION=${{ steps.latest.outputs.version }}
+          VERSION=${{ needs.check-version.outputs.latest }}
           URL="https://npm.fontawesome.com/@fortawesome/fontawesome-pro/-/fontawesome-pro-${VERSION}.tgz"
           echo "Downloading: $URL"
           curl -L -H "Authorization: Bearer ${{ secrets.FA_AUTH_TOKEN }}" -o fa-pro.tgz "$URL"
@@ -69,12 +81,12 @@ jobs:
         run: python extract_unicode.py
 
       - name: Update version.txt
-        run: echo "${{ steps.latest.outputs.version }}" > version.txt
+        run: echo "${{ needs.check-version.outputs.latest }}" > version.txt
 
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add glyphs.csv version.txt
-          git diff --cached --quiet || git commit -m "🔤 Update glyphs.csv for version ${{ steps.latest.outputs.version }}"
+          git diff --cached --quiet || git commit -m "🔤 Update glyphs.csv for version ${{ needs.check-version.outputs.latest }}"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
