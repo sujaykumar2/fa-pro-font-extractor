@@ -26,17 +26,20 @@ jobs:
           echo "Latest version: $VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Download Font Awesome Pro .tgz
+      - name: Download and Inspect Font Awesome Pro .tgz
         run: |
           VERSION=${{ steps.latest.outputs.version }}
           URL="https://npm.fontawesome.com/@fortawesome/fontawesome-pro/-/fontawesome-pro-${VERSION}.tgz"
           echo "Downloading from: $URL"
-          curl -v -L -H "Authorization: Bearer ${{ secrets.FA_AUTH_TOKEN }}" -o fa-pro.tgz "$URL"
+          curl -L -H "Authorization: Bearer ${{ secrets.FA_AUTH_TOKEN }}" -o fa-pro.tgz "$URL"
 
-      - name: Inspect Downloaded File
-        run: |
+          echo "--- FILE TYPE ---"
           file fa-pro.tgz
+
+          echo "--- FILE SIZE ---"
           ls -lh fa-pro.tgz
+
+          echo "--- FILE HEAD (first 10 lines) ---"
           head -n 10 fa-pro.tgz || true
 
       - name: Extract .ttf File
