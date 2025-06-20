@@ -63,6 +63,8 @@ jobs:
         run: |
           rm -f glyphs.csv fa-pro.tgz fa-solid-900.ttf
           rm -rf extracted
+          git rm -f glyphs.csv || true
+
 
       - name: Download FontAwesome Pro .tgz
         run: |
