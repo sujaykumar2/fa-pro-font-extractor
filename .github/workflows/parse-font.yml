@@ -1,1 +1,43 @@
+name: Extract Glyphs from Font Awesome
 
+on:
+  repository_dispatch:
+    types: [trigger-from-figma]
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install fonttools
+
+      - name: Download Font Awesome Pro .tgz
+        run: |
+          curl -L -H "Authorization: Bearer ${{ secrets.FA_TOKEN }}" \
+          https://npm.fontawesome.com/@fortawesome/fontawesome-pro/-/fontawesome-pro-6.7.2.tgz \
+          -o fa-pro.tgz
+
+      - name: Extract .ttf file
+        run: |
+          mkdir extracted
+          tar -xzf fa-pro.tgz -C extracted
+          find extracted -name "fa-solid-900.ttf" -exec cp {} fa-solid-900.ttf \;
+
+      - name: Parse Unicode from TTF
+        run: |
+          python extract_unicode.py
+
+      - name: Commit glyphs.csv
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: "🧬 Update glyphs.csv from latest .ttf"
+          add: "glyphs.csv"
