@@ -1,7 +1,7 @@
 name: Extract Glyphs from Font Awesome
 
 on:
-  repository_dispatch:
+  repository_dispatch
 
 jobs:
   extract:
