@@ -60,13 +60,12 @@ jobs:
           pip install fonttools
 
       - name: 🧹 Clean up old files
-        run: |
-          rm -f fa-pro.tgz fa-solid-900.ttf
-          rm -rf extracted
-          if [ -f glyphs.csv ]; then
+          run: |
+            echo "🧹 Cleaning old files..."
             git rm -f glyphs.csv || true
-            rm -f glyphs.csv
-          fi
+            rm -f glyphs.csv fa-pro.tgz fa-solid-900.ttf
+            rm -rf extracted
+
 
       - name: Download FontAwesome Pro .tgz
         run: |
@@ -87,10 +86,11 @@ jobs:
       - name: Update version.txt
         run: echo "${{ needs.check-version.outputs.latest }}" > version.txt
 
-      - name: Commit and push changes
+      - name: ✅ Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add glyphs.csv version.txt
-          git diff --cached --quiet || git commit -m "🔤 Update glyphs.csv for version ${{ needs.check-version.outputs.latest }}"
+          git commit -m "🔤 Update glyphs.csv for version ${{ needs.check-version.outputs.latest }}" || echo "No changes to commit"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
+
