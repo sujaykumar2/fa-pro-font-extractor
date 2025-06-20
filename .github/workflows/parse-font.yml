@@ -2,7 +2,6 @@ name: Extract Glyphs from Font Awesome
 
 on:
   repository_dispatch:
-    types: [trigger-from-figma]
 
 jobs:
   extract:
