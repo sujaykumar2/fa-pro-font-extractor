@@ -63,13 +63,8 @@ jobs:
         run: |
           echo "🧹 Cleaning old files..."
           git rm -f glyphs.csv || true
-          rm -f fa-pro.tgz fa-solid-900.ttf
+          rm -f glyphs.csv fa-pro.tgz fa-solid-900.ttf
           rm -rf extracted
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -m "🧹 Remove old glyphs.csv" || echo "No old glyphs.csv to remove"
-          git pull --rebase
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
 
       - name: Download FontAwesome Pro .tgz
         run: |
@@ -98,3 +93,5 @@ jobs:
           git commit -m "🔤 Update glyphs.csv for version ${{ needs.check-version.outputs.latest }}" || echo "No changes to commit"
           git pull --rebase
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
+
+In this code that I had sent you earlier, this problem was not occurring, what happend now? Can you make the required changes just for deleting the csv and resend?
