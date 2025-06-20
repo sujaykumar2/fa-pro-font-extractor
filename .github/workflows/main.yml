@@ -19,7 +19,7 @@ jobs:
           sudo apt-get update
           pip install fonttools
 
-      - name: Get Latest FA Version from GitHub
+      - name: Get Latest Font Awesome Version
         id: latest
         run: |
           VERSION=$(curl -s https://api.github.com/repos/FortAwesome/Font-Awesome/releases/latest | jq -r .tag_name)
@@ -30,16 +30,22 @@ jobs:
         run: |
           VERSION=${{ steps.latest.outputs.version }}
           URL="https://npm.fontawesome.com/@fortawesome/fontawesome-pro/-/fontawesome-pro-${VERSION}.tgz"
-          echo "Downloading from $URL"
-          curl -L -H "Authorization: Bearer ${{ secrets.FA_AUTH_TOKEN }}" -o fa-pro.tgz "$URL"
+          echo "Downloading from: $URL"
+          curl -v -L -H "Authorization: Bearer ${{ secrets.FA_AUTH_TOKEN }}" -o fa-pro.tgz "$URL"
 
-      - name: Extract fa-solid-900.ttf
+      - name: Inspect Downloaded File
+        run: |
+          file fa-pro.tgz
+          ls -lh fa-pro.tgz
+          head -n 10 fa-pro.tgz || true
+
+      - name: Extract .ttf File
         run: |
           mkdir extracted
           tar -xf fa-pro.tgz -C extracted
           find extracted -name "fa-solid-900.ttf" -exec cp {} fa-solid-900.ttf \;
 
-      - name: Extract Unicode from TTF
+      - name: Extract Unicode & Glyphs
         run: python extract_unicode.py
 
       - name: Commit & Push glyphs.csv
