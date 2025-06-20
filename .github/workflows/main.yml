@@ -63,8 +63,13 @@ jobs:
         run: |
           echo "🧹 Cleaning old files..."
           git rm -f glyphs.csv || true
-          rm -f glyphs.csv fa-pro.tgz fa-solid-900.ttf
+          rm -f fa-pro.tgz fa-solid-900.ttf
           rm -rf extracted
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "🧹 Remove old glyphs.csv" || echo "No old glyphs.csv to remove"
+          git pull --rebase
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
 
       - name: Download FontAwesome Pro .tgz
         run: |
