@@ -29,7 +29,7 @@ jobs:
       - name: Check for Update
         id: compare
         run: |
-          LATEST=${{ steps.get_version.outputs.version }}
+          LATEST="${{ steps.get_version.outputs.version }}"
           if [[ -f .last_version && "$(cat .last_version)" == "$LATEST" ]]; then
             echo "No new version. Skipping."
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -41,7 +41,7 @@ jobs:
       - name: Download FontAwesome Pro ZIP
         if: steps.compare.outputs.changed == 'true'
         run: |
-          LATEST=${{ steps.get_version.outputs.version }}
+          LATEST="${{ steps.get_version.outputs.version }}"
           URL="https://pro.fontawesome.com/releases/v$LATEST/fontawesome-pro-$LATEST-desktop.zip"
           echo "Downloading from: $URL"
           curl -L -o fa-pro.zip "$URL" \
