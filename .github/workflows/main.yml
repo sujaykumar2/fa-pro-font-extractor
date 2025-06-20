@@ -62,23 +62,22 @@ jobs:
       - name: 🧹 Clean up old files
         run: |
           echo "🧹 Cleaning up repo and local files..."
-          
-          # ✅ Set the Git author identity (required for commits)
+      
+          # Set Git author
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
       
-          # 🧹 Remove tracked and untracked files
+          # Pull latest before making any local changes
+          git pull --rebase
+      
+          # Delete tracked and untracked files
           git rm -f glyphs.csv || true
           rm -f fa-pro.tgz fa-solid-900.ttf
           rm -rf extracted
       
-          # 📥 Pull latest to avoid push conflict
-          git pull --rebase
-      
-          # 💾 Commit deletion (if needed) and push
+          # Commit and push deletions
           git commit -m "🧹 Remove old glyphs.csv" || echo "No changes to commit"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
-
 
       - name: Download FontAwesome Pro .tgz
         run: |
