@@ -1,8 +1,7 @@
-name: Font Awesome Glyph Sync
+name: Font Awesome Pro Glyph Sync
 
 on:
-  repository_dispatch:
-    types: [trigger-from-figma]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -15,53 +14,38 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
+      - name: Install Python and Dependencies
         run: |
+          sudo apt-get update
           pip install fonttools
 
-      - name: Get Latest FA Release Version
-        id: get_version
+      - name: Get Latest FA Version from GitHub
+        id: latest
         run: |
           VERSION=$(curl -s https://api.github.com/repos/FortAwesome/Font-Awesome/releases/latest | jq -r .tag_name)
           echo "Latest version: $VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Check for Update
-        id: compare
+      - name: Download Font Awesome Pro .tgz
         run: |
-          LATEST="${{ steps.get_version.outputs.version }}"
-          if [[ -f .last_version && "$(cat .last_version)" == "$LATEST" ]]; then
-            echo "No new version. Skipping."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo "New version detected: $LATEST"
-          echo "changed=true" >> "$GITHUB_OUTPUT"
+          VERSION=${{ steps.latest.outputs.version }}
+          URL="https://npm.fontawesome.com/@fortawesome/fontawesome-pro/-/fontawesome-pro-${VERSION}.tgz"
+          echo "Downloading from $URL"
+          curl -L -H "Authorization: Bearer ${{ secrets.FA_AUTH_TOKEN }}" -o fa-pro.tgz "$URL"
 
-      - name: Download FontAwesome Pro ZIP
-        if: steps.compare.outputs.changed == 'true'
+      - name: Extract fa-solid-900.ttf
         run: |
-          LATEST="${{ steps.get_version.outputs.version }}"
-          URL="https://pro.fontawesome.com/releases/v$LATEST/fontawesome-pro-$LATEST-desktop.zip"
-          echo "Downloading from: $URL"
-          curl -L -o fa-pro.zip "$URL" \
-            -H "Authorization: Bearer ${{ secrets.FA_AUTH_TOKEN }}"
-          unzip -o fa-pro.zip -d fa-pro
+          mkdir extracted
+          tar -xf fa-pro.tgz -C extracted
+          find extracted -name "fa-solid-900.ttf" -exec cp {} fa-solid-900.ttf \;
 
       - name: Extract Unicode from TTF
-        if: steps.compare.outputs.changed == 'true'
         run: python extract_unicode.py
 
-      - name: Save Latest Version
-        if: steps.compare.outputs.changed == 'true'
-        run: |
-          echo "${{ steps.get_version.outputs.version }}" > .last_version
-
-      - name: Commit & Push Output
-        if: steps.compare.outputs.changed == 'true'
+      - name: Commit & Push glyphs.csv
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add glyphs.csv .last_version
-          git commit -m "Update glyphs.csv for version ${{ steps.get_version.outputs.version }}"
+          git add glyphs.csv
+          git commit -m "🔤 Update glyphs.csv for version ${{ steps.latest.outputs.version }}"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
