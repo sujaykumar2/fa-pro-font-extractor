@@ -52,7 +52,7 @@ jobs:
 
       - name: Extract Unicode & Glyphs
         run: python extract_unicode.py
-
+        
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
