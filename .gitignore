@@ -1,0 +1,9 @@
+# Ignore downloaded archive
+fa-pro.tgz
+
+# Ignore extracted font files and folders
+extracted/
+fa-solid-900.ttf
+
+# Ignore oversized metadata
+extracted/package/metadata/icon-families.json
