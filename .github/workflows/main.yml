@@ -1,40 +1,67 @@
-name: Extract and Upload TTF
+name: Font Awesome Glyph Sync
 
 on:
-  workflow_dispatch:
   repository_dispatch:
-    types: [trigger-from-make]
+    types: [trigger-from-figma]
+
+permissions:
+  contents: write
 
 jobs:
-  extract_and_upload:
+  sync-font:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download Font Awesome Pro TGZ
-        run: |
-          curl -L -H "Authorization: Bearer ${{ secrets.FA_TOKEN }}" \
-          https://npm.fontawesome.com/@fortawesome/fontawesome-pro/-/fontawesome-pro-6.7.2.tgz \
-          -o fa-pro.tgz
+      - name: Checkout Repo
+        uses: actions/checkout@v4
 
-      - name: Extract .tgz
+      - name: Install Dependencies
         run: |
-          mkdir extracted
-          tar -xzf fa-pro.tgz -C extracted
+          pip install fonttools
 
-      - name: Find .ttf file
+      - name: Get Latest FA Release Version
+        id: get_version
         run: |
-          find extracted -type f -name "*.ttf" -exec cp {} fa-solid-900.ttf \;
+          VERSION=$(curl -s https://api.github.com/repos/FortAwesome/Font-Awesome/releases/latest | jq -r .tag_name)
+          echo "Latest version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Upload to GoDaddy FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASS }}
-          local-dir: ./
-          server-dir: /public_html/fa-ttf/
-          exclude: |
-            **/.git*
-            **/.github*
-            fa-pro.tgz
-            extracted/**
+      - name: Check for Update
+        id: compare
+        run: |
+          LATEST=${{ steps.get_version.outputs.version }}
+          if [[ -f .last_version && "$(cat .last_version)" == "$LATEST" ]]; then
+            echo "No new version. Skipping."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "New version detected: $LATEST"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Download FontAwesome Pro ZIP
+        if: steps.compare.outputs.changed == 'true'
+        run: |
+          LATEST=${{ steps.get_version.outputs.version }}
+          URL="https://pro.fontawesome.com/releases/v$LATEST/fontawesome-pro-$LATEST-desktop.zip"
+          echo "Downloading from: $URL"
+          curl -L -o fa-pro.zip "$URL" \
+            -H "Authorization: Bearer ${{ secrets.FA_AUTH_TOKEN }}"
+          unzip -o fa-pro.zip -d fa-pro
+
+      - name: Extract Unicode from TTF
+        if: steps.compare.outputs.changed == 'true'
+        run: python extract_unicode.py
+
+      - name: Save Latest Version
+        if: steps.compare.outputs.changed == 'true'
+        run: |
+          echo "${{ steps.get_version.outputs.version }}" > .last_version
+
+      - name: Commit & Push Output
+        if: steps.compare.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add glyphs.csv .last_version
+          git commit -m "Update glyphs.csv for version ${{ steps.get_version.outputs.version }}"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
