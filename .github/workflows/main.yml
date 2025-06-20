@@ -65,6 +65,13 @@ jobs:
           rm -rf extracted
           git rm -f glyphs.csv || true
 
+          - name: 🧹 Clean up old files
+            run: |
+              rm -f glyphs.csv fa-pro.tgz fa-solid-900.ttf
+              rm -rf extracted
+              if [ -f glyphs.csv ]; then git rm -f glyphs.csv; fi
+
+
 
       - name: Download FontAwesome Pro .tgz
         run: |
@@ -89,6 +96,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add glyphs.csv version.txt
+          git add -A glyphs.csv version.txt
           git diff --cached --quiet || git commit -m "🔤 Update glyphs.csv for version ${{ needs.check-version.outputs.latest }}"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
