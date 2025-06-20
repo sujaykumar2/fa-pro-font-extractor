@@ -72,7 +72,6 @@ jobs:
       
           # Delete tracked and untracked files
           git rm -f glyphs.csv || true
-          rm -f fa-pro.tgz fa-solid-900.ttf
           rm -rf extracted
       
           # Commit and push deletions
