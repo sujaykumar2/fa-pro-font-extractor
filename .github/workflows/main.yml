@@ -58,20 +58,12 @@ jobs:
         run: |
           sudo apt-get update
           pip install fonttools
-
-      - name: Cleanup old files
+          
+      - name: 🧹 Clean up old files
         run: |
           rm -f glyphs.csv fa-pro.tgz fa-solid-900.ttf
           rm -rf extracted
-          git rm -f glyphs.csv || true
-
-          - name: 🧹 Clean up old files
-            run: |
-              rm -f glyphs.csv fa-pro.tgz fa-solid-900.ttf
-              rm -rf extracted
-              if [ -f glyphs.csv ]; then git rm -f glyphs.csv; fi
-
-
+          if [ -f glyphs.csv ]; then git rm -f glyphs.csv; fi
 
       - name: Download FontAwesome Pro .tgz
         run: |
